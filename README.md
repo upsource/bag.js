@@ -246,3 +246,56 @@ License
 -------
 
 [MIT](https://github.com/nodeca/bag.js/blob/master/LICENSE)
+
+upSource Extension
+------------------
+
+Example usage:
+``` javascript
+function bagAlternativeCordova() {
+  if(typeof cordova === 'undefined') {
+    return false;
+  }
+  return function (obj, callback) {
+    function _nopeBagLoad() {
+      return;
+    }
+
+    function failBagLoad(error) {
+      console.log('error loading file: ' + obj.key + ', code: ' + error.code);
+      callback(new Error('Can\'t open file ' + error.code));
+      callback = _nopeBagLoad;
+    }
+
+    var appDir = cordova.file.applicationDirectory;
+
+    window.resolveLocalFileSystemURL(appDir + 'www/' + obj.key, function(fileEntry) {
+      // Get a File object representing the file,
+      // then use FileReader to read its contents.
+      fileEntry.file(function(file) {
+        var reader = new FileReader();
+
+        reader.onloadend = function() {
+          console.log('file loaded: ' + obj.key);
+          callback(null, {
+            content: this.result,
+            type: getMimeByFilename(file.name)
+          });
+          callback = _nopeBagLoad;
+        };
+
+        reader.readAsText(file);
+      }, failBagLoad);
+
+    }, failBagLoad);
+  };
+}
+
+//load from filesystem if cordova is available
+function doSomething() {
+  bag.require(
+    { url: url, key: 'somefile.js'},
+    onSuccess,
+    bagAlternativeCordova());
+}
+```
