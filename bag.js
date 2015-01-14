@@ -6,9 +6,11 @@
  *
  * License MIT
  */
+//"bag.js": "~0.1.3.us"
+//edited by upSource to allow custom file loader (instead of XHR) e.g. File-Api
 
+/* jshint ignore:start */
 /*global define*/
-
 (function (root, factory) {
   'use strict';
 
@@ -34,8 +36,8 @@
   }
 
   var _isArray = Array.isArray || function isArray(obj) {
-    return Object.prototype.toString.call(obj) === '[object Array]';
-  };
+      return Object.prototype.toString.call(obj) === '[object Array]';
+    };
 
   function _isFunction(obj) {
     return Object.prototype.toString.call(obj) === '[object Function]';
@@ -303,7 +305,7 @@
 
     this.init = function (callback) {
       var idb = this.idb = window.indexedDB; /* || window.webkitIndexedDB ||
-                           window.mozIndexedDB || window.msIndexedDB;*/
+       window.mozIndexedDB || window.msIndexedDB;*/
 
       var req = idb.open(namespace, 2 /*version*/);
 
@@ -371,7 +373,7 @@
 
     this.clear = function (expiredOnly, callback) {
       var keyrange = window.IDBKeyRange; /* ||
-                     window.webkitIDBKeyRange || window.msIDBKeyRange;*/
+       window.webkitIDBKeyRange || window.msIDBKeyRange;*/
       var tx, store;
 
       tx = db.transaction('kv', 'readwrite');
@@ -402,9 +404,9 @@
 
   Idb.prototype.exists = function() {
     return !!(window.indexedDB /*||
-              window.webkitIndexedDB ||
-              window.mozIndexedDB ||
-              window.msIndexedDB*/);
+     window.webkitIndexedDB ||
+     window.mozIndexedDB ||
+     window.msIndexedDB*/);
   };
 
 
@@ -574,7 +576,7 @@
             callback = _nope;
           } else {
             callback(new Error('Can\'t open url ' + url +
-               (xhr.status ? xhr.statusText + ' (' + xhr.status + ')' : '')));
+            (xhr.status ? xhr.statusText + ' (' + xhr.status + ')' : '')));
             callback = _nope;
           }
         }
@@ -607,8 +609,8 @@
       return cacheObj;
     }
 
-    function saveUrl(obj, callback) {
-      getUrl(obj.url_real, function(err, result) {
+    function onSaveCallBack(obj, callback) {
+      return function(err, result) {
         if (err) { return callback(err); }
 
         var delay = (obj.expire || self.expire) * 60 * 60; // in seconds
@@ -620,9 +622,16 @@
           _default(obj, cached);
           callback(null, obj);
         });
-      });
+      }
     }
 
+    function saveUrl(obj, callback, alternativeLoader) {
+      if(alternativeLoader) {
+        alternativeLoader(obj, onSaveCallBack(obj, callback));
+      } else {
+        getUrl(obj.url_real, onSaveCallBack(obj, callback));
+      }
+    }
 
     function isCacheValid(cached, obj) {
       return !cached ||
@@ -633,7 +642,13 @@
     }
 
 
-    function fetch(obj, callback) {
+    function fetchWithAlternative(alternativeLoader) {
+      return function(obj, callback) {
+        fetch(obj, callback, alternativeLoader);
+      }
+    }
+
+    function fetch(obj, callback, alternativeLoader) {
 
       if (!obj.url) { return callback(); }
       obj.key = (obj.key || obj.url);
@@ -679,7 +694,7 @@
           }
 
           callback(null, obj);
-        });
+        }, alternativeLoader);
       });
     }
 
@@ -734,6 +749,7 @@
         // Have to use .text, since we support IE8,
         // which won't allow appending to a script
         script.text = txt;
+        console.log(obj.url);
         head.appendChild(script);
         return;
       },
@@ -753,6 +769,7 @@
         } else {
           style.appendChild(document.createTextNode(txt)); // others
         }
+        console.log(obj.url);
 
         head.appendChild(style);
         return;
@@ -784,8 +801,9 @@
     // Public methods
     //
 
-    this.require = function(resources, callback) {
-      var queue = self._queue;
+    this.require = function(resources, callback, alternativeLoader) {
+      var queue = self._queue,
+        fetchFun = alternativeLoader? fetchWithAlternative(alternativeLoader): fetch;
 
       if (_isFunction(resources)) {
         callback = resources;
@@ -810,7 +828,7 @@
         return self;
       }
 
-      _asyncEach(queue, fetch, function(err) {
+      _asyncEach(queue, fetchFun, function(err) {
         if (err) {
           // cleanup
           self._chained = false;
@@ -865,3 +883,4 @@
   return Bag;
 
 }));
+/* jshint ignore:end */
