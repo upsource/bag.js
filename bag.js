@@ -95,7 +95,7 @@
   var DomStorage = function (namespace) {
     var self = this;
     var _ns = namespace + '__';
-    var _storage = sessionStorage;
+    var _storage = localStorage;
 
 
     this.init = function (callback) {
@@ -190,8 +190,8 @@
 
   DomStorage.prototype.exists = function() {
     try {
-      sessionStorage.setItem('__ls_test__', '__ls_test__');
-      sessionStorage.removeItem('__ls_test__');
+      localStorage.setItem('__ls_test__', '__ls_test__');
+      localStorage.removeItem('__ls_test__');
       return true;
     } catch (e) {
       return false;
@@ -417,7 +417,7 @@
   var storeAdapters = {
     'indexeddb': Idb,
     'websql': WebSql,
-    'sessionstorage': DomStorage
+    'localstorage': DomStorage
   };
 
 
@@ -552,7 +552,7 @@
     this.expire       = options.expire || 30 * 24;  // 30 days
     this.isValidItem  = options.isValidItem || null;
 
-    this.stores = _isArray(options.stores) ? options.stores : [ 'indexeddb', 'websql', 'sessionstorage' ];
+    this.stores = _isArray(options.stores) ? options.stores : [ 'indexeddb', 'websql', 'localstorage' ];
 
     var storage = null;
 
