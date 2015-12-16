@@ -687,6 +687,10 @@
           }
 
           if (err_load) {
+            if(obj.live) {
+              callback(err_load);
+              return;
+            }
             obj.type = obj.type || cached.originalType;
             _default(obj, cached);
             callback(null, obj);
